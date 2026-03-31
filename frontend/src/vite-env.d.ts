@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_PROGRAM_ID: string;
-  readonly VITE_NODE_ENDPOINT: string;
+  readonly VITE_PROGRAM_ID?: string;
+  readonly VITE_NODE_ENDPOINT?: string;
 }
 
 interface ImportMeta {

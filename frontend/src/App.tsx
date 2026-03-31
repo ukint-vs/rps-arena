@@ -10,12 +10,15 @@ import {
   type WalletAccount,
 } from "./lib/wallet";
 import type { GameInfo } from "./lib/program";
-import { queryOpenGames, queryMyGames } from "./lib/program";
+import { queryOpenGames, queryMyGames, setActiveProgramId, resetProgram } from "./lib/program";
+import { resetApi } from "./lib/api";
+import { loadNetwork, saveNetwork, type NetworkConfig } from "./lib/network";
 
 const STORAGE_SOURCE = "rps.wallet.source";
 const STORAGE_ADDR = "rps.wallet.address";
 
 export default function App() {
+  const [network, setNetwork] = useState<NetworkConfig>(() => loadNetwork());
   const [api, setApi] = useState<GearApi | null>(null);
   const [apiStatus, setApiStatus] = useState<"connecting" | "ready" | "error">("connecting");
   const [wallets, setWallets] = useState<string[]>([]);
@@ -27,17 +30,32 @@ export default function App() {
   const [openGames, setOpenGames] = useState<GameInfo[]>([]);
   const [myGames, setMyGames] = useState<GameInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [txPending, setTxPending] = useState(false);
 
   const triggerRefresh = useCallback(() => setRefresh((n) => n + 1), []);
 
-  // Connect API
+  // Connect API — keyed on network
   useEffect(() => {
     let cancelled = false;
-    GearApi.create({ providerAddress: import.meta.env.VITE_NODE_ENDPOINT })
+    setApiStatus("connecting");
+    setApi(null);
+    setOpenGames([]);
+    setMyGames([]);
+    setBalance(null);
+
+    // Update program module
+    setActiveProgramId(network.programId);
+    resetProgram();
+
+    GearApi.create({ providerAddress: network.endpoint })
       .then((a) => { if (!cancelled) { setApi(a); setApiStatus("ready"); } })
       .catch(() => { if (!cancelled) setApiStatus("error"); });
-    return () => { cancelled = true; };
-  }, []);
+
+    return () => {
+      cancelled = true;
+      resetApi();
+    };
+  }, [network]);
 
   // Auto-reconnect wallet
   useEffect(() => {
@@ -101,6 +119,14 @@ export default function App() {
     return () => { cancelled = true; clearInterval(interval); };
   }, [api, apiStatus, account, refresh]);
 
+  const handleNetworkSwitch = useCallback((config: NetworkConfig) => {
+    saveNetwork(config);
+    setNetwork(config);
+  }, []);
+
+  const handleTxStart = useCallback(() => setTxPending(true), []);
+  const handleTxEnd = useCallback(() => setTxPending(false), []);
+
   const connectWallet = async (source: string) => {
     const { accounts, signer: s } = await enableWallet(source);
     if (accounts.length === 0) return;
@@ -118,12 +144,12 @@ export default function App() {
 
   // Deduplicate: my active games (not in open)
   const myActiveGames = myGames.filter(
-    (g) => g.status !== "WaitingForOpponent" || 
+    (g) => g.status !== "WaitingForOpponent" ||
            (account && g.creator === account.address)
   );
 
   // Open games I didn't create
-  const joinableGames = account 
+  const joinableGames = account
     ? openGames.filter((g) => {
         // Compare with both formats
         const myHex = account.address.startsWith("0x") ? account.address : "";
@@ -143,6 +169,9 @@ export default function App() {
         balance={balance}
         wallets={wallets}
         apiStatus={apiStatus}
+        activeNetwork={network}
+        onNetworkSwitch={handleNetworkSwitch}
+        switchDisabled={txPending}
         onConnect={connectWallet}
         onDisconnect={disconnect}
       />
@@ -159,7 +188,7 @@ export default function App() {
           <>
             {/* Create game */}
             {account && (
-              <CreateGame api={api} account={account.address} signer={signer} onCreated={triggerRefresh} />
+              <CreateGame api={api} account={account.address} signer={signer} networkId={network.programId.slice(0, 10)} onCreated={triggerRefresh} onTxStart={handleTxStart} onTxEnd={handleTxEnd} />
             )}
 
             {/* My active games needing action */}
@@ -176,7 +205,10 @@ export default function App() {
                       api={api}
                       account={account}
                       signer={signer}
+                      networkId={network.programId.slice(0, 10)}
                       onAction={triggerRefresh}
+                      onTxStart={handleTxStart}
+                      onTxEnd={handleTxEnd}
                       perspective="player"
                     />
                   ))}
@@ -198,7 +230,10 @@ export default function App() {
                       api={api}
                       account={account}
                       signer={signer}
+                      networkId={network.programId.slice(0, 10)}
                       onAction={triggerRefresh}
+                      onTxStart={handleTxStart}
+                      onTxEnd={handleTxEnd}
                       perspective="creator"
                     />
                   ))}
@@ -229,7 +264,10 @@ export default function App() {
                       api={api}
                       account={account}
                       signer={signer}
+                      networkId={network.programId.slice(0, 10)}
                       onAction={triggerRefresh}
+                      onTxStart={handleTxStart}
+                      onTxEnd={handleTxEnd}
                       perspective="challenger"
                     />
                   ))}

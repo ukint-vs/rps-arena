@@ -7,7 +7,10 @@ type Props = {
   api: GearApi;
   account: string;
   signer: unknown;
+  networkId: string;
   onCreated: () => void;
+  onTxStart?: () => void;
+  onTxEnd?: () => void;
 };
 
 const MOVES: Move[] = ["Rock", "Paper", "Scissors"];
@@ -17,7 +20,7 @@ const MOVE_EMOJI: Record<Move, string> = {
   Scissors: "✂️",
 };
 
-export function CreateGame({ api, account, signer, onCreated }: Props) {
+export function CreateGame({ api, account, signer, networkId, onCreated, onTxStart, onTxEnd }: Props) {
   const [selectedMove, setSelectedMove] = useState<Move | null>(null);
   const [salt, setSalt] = useState(() =>
     Math.random().toString(36).slice(2, 10)
@@ -29,13 +32,14 @@ export function CreateGame({ api, account, signer, onCreated }: Props) {
     if (!selectedMove) return;
     setLoading(true);
     setError(null);
+    onTxStart?.();
 
     try {
       const commitment = await queryComputeCommitment(api, selectedMove, salt);
       const result = await txCreateGame(api, account, commitment, signer);
       // Save move+salt — game ID is returned from the tx
       const gameId = result ?? "latest";
-      const key = `rps.game.${gameId}`;
+      const key = `rps.game.${networkId}.${gameId}`;
       localStorage.setItem(key, JSON.stringify({ move: selectedMove, salt }));
       console.log(`[RPS] Saved commitment for game #${gameId}: move=${selectedMove}, salt=${salt}`);
       onCreated();
@@ -45,6 +49,7 @@ export function CreateGame({ api, account, signer, onCreated }: Props) {
       setError(e.message || "Failed to create game");
     } finally {
       setLoading(false);
+      onTxEnd?.();
     }
   };
 

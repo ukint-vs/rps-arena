@@ -29,17 +29,20 @@ type Props = {
   api: GearApi;
   account: WalletAccount | null;
   signer: unknown;
+  networkId: string;
   onAction: () => void;
+  onTxStart?: () => void;
+  onTxEnd?: () => void;
   perspective: "player" | "creator" | "challenger";
 };
 
-export function GameCard({ game, api, account, signer, onAction, perspective }: Props) {
+export function GameCard({ game, api, account, signer, networkId, onAction, onTxStart, onTxEnd, perspective }: Props) {
   const [selectedMove, setSelectedMove] = useState<Move | null>(null);
   const [salt, setSalt] = useState(() => Math.random().toString(36).slice(2, 10));
   // Auto-fill from localStorage if we saved the commitment
   const savedCommitment = (() => {
     try {
-      const raw = localStorage.getItem(`rps.game.${game.id}`);
+      const raw = localStorage.getItem(`rps.game.${networkId}.${game.id}`);
       if (raw) return JSON.parse(raw) as { move: Move; salt: string };
     } catch {}
     return null;
@@ -66,40 +69,40 @@ export function GameCard({ game, api, account, signer, onAction, perspective }: 
 
   const handleJoin = async () => {
     if (!account || !selectedMove) return;
-    setActing(true); setError(null);
+    setActing(true); setError(null); onTxStart?.();
     try {
       const commitment = await queryComputeCommitment(api, selectedMove, salt);
       await txJoinGame(api, account.address, Number(game.id), commitment, signer);
       // Save move+salt to localStorage so we can reveal later
-      const key = `rps.game.${game.id}`;
+      const key = `rps.game.${networkId}.${game.id}`;
       localStorage.setItem(key, JSON.stringify({ move: selectedMove, salt }));
       console.log(`[RPS] Saved commitment for game #${game.id}: move=${selectedMove}, salt=${salt}`);
       onAction();
     } catch (e: any) {
       setError(e.message || "Failed to join");
-    } finally { setActing(false); }
+    } finally { setActing(false); onTxEnd?.(); }
   };
 
   const handleReveal = async () => {
     if (!account || !revealMove || !revealSalt) return;
-    setActing(true); setError(null);
+    setActing(true); setError(null); onTxStart?.();
     try {
       await txReveal(api, account.address, Number(game.id), revealMove, revealSalt, signer);
       onAction();
     } catch (e: any) {
       setError(e.message || "Failed to reveal");
-    } finally { setActing(false); }
+    } finally { setActing(false); onTxEnd?.(); }
   };
 
   const handleCancel = async () => {
     if (!account) return;
-    setActing(true); setError(null);
+    setActing(true); setError(null); onTxStart?.();
     try {
       await txCancelGame(api, account.address, Number(game.id), signer);
       onAction();
     } catch (e: any) {
       setError(e.message || "Failed to cancel");
-    } finally { setActing(false); }
+    } finally { setActing(false); onTxEnd?.(); }
   };
 
   return (

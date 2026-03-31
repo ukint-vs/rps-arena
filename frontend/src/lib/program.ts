@@ -4,7 +4,6 @@ import { SailsIdlParser } from "sails-js-parser";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { u8aToHex } from "@polkadot/util";
 import idlRaw from "@/assets/rps_arena.idl?raw";
-import { PROGRAM_ID } from "./api";
 
 /** Convert SS58 or hex address to 0x-prefixed hex */
 function toHexAddress(address: string): string {
@@ -17,17 +16,36 @@ function toHexAddress(address: string): string {
 }
 
 let cachedSails: Sails | null = null;
+let cachedProgramId: string | null = null;
+let activeProgramId: `0x${string}` | null = null;
+
+export function setActiveProgramId(pid: `0x${string}`): void {
+  if (pid !== activeProgramId) {
+    activeProgramId = pid;
+    cachedSails = null;
+    cachedProgramId = null;
+  }
+}
+
+export function resetProgram(): void {
+  cachedSails = null;
+  cachedProgramId = null;
+}
 
 export async function getProgram(api: GearApi): Promise<Sails> {
-  if (cachedSails) return cachedSails;
+  const pid = activeProgramId;
+  if (!pid) throw new Error("No active program ID set");
+
+  if (cachedSails && cachedProgramId === pid) return cachedSails;
 
   const parser = await SailsIdlParser.new();
   const sails = new Sails(parser);
   sails.parseIdl(idlRaw);
   sails.setApi(api);
-  sails.setProgramId(PROGRAM_ID);
+  sails.setProgramId(pid);
 
   cachedSails = sails;
+  cachedProgramId = pid;
   return sails;
 }
 

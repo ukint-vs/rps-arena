@@ -1,10 +1,15 @@
 import type { WalletAccount } from "../lib/wallet";
+import type { NetworkConfig } from "../lib/network";
+import { NetworkSelector } from "./NetworkSelector";
 
 type Props = {
   account: WalletAccount | null;
   balance: string | null;
   wallets: string[];
   apiStatus: "connecting" | "ready" | "error";
+  activeNetwork: NetworkConfig;
+  onNetworkSwitch: (config: NetworkConfig) => void;
+  switchDisabled?: boolean;
   onConnect: (source: string) => void;
   onDisconnect: () => void;
 };
@@ -18,6 +23,9 @@ export function Header({
   balance,
   wallets,
   apiStatus,
+  activeNetwork,
+  onNetworkSwitch,
+  switchDisabled,
   onConnect,
   onDisconnect,
 }: Props) {
@@ -37,6 +45,11 @@ export function Header({
               ? "bg-yellow-500 animate-pulse"
               : "bg-red-500"
           }`}
+        />
+        <NetworkSelector
+          activeNetwork={activeNetwork}
+          onSwitch={onNetworkSwitch}
+          disabled={switchDisabled}
         />
       </div>
 
