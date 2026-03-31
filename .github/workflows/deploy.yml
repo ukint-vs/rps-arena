@@ -28,6 +28,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: cd frontend && npm ci && npm run build
+        env:
+          VITE_PROGRAM_ID: "0x02e1e2f34411eca5da56425b88b82d9825052beb53adda07ba0e23662ab79495"
+          VITE_NODE_ENDPOINT: "wss://testnet.vara.network"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
