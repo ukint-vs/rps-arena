@@ -1,6 +1,7 @@
 import type { WalletAccount } from "../lib/wallet";
 import type { NetworkConfig } from "../lib/network";
 import { NetworkSelector } from "./NetworkSelector";
+import { CopyAddress } from "./CopyAddress";
 
 type Props = {
   account: WalletAccount | null;
@@ -14,9 +15,6 @@ type Props = {
   onDisconnect: () => void;
 };
 
-function truncate(addr: string): string {
-  return addr.slice(0, 6) + "..." + addr.slice(-4);
-}
 
 export function Header({
   account,
@@ -59,8 +57,8 @@ export function Header({
             {balance && (
               <span className="text-sm text-gray-400">{balance} VARA</span>
             )}
-            <span className="text-sm font-mono bg-[#1a1a1a] px-3 py-1.5 rounded-md border border-gray-800">
-              {truncate(account.address)}
+            <span className="text-sm bg-[#1a1a1a] px-3 py-1.5 rounded-md border border-gray-800">
+              <CopyAddress address={account.address} />
             </span>
             <button
               onClick={onDisconnect}

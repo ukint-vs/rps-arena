@@ -2,17 +2,12 @@ import { useState, useEffect } from "react";
 import type { GearApi } from "@gear-js/api";
 import type { PlayerStats } from "../lib/program";
 import { queryLeaderboard } from "../lib/program";
-import { toVara } from "../lib/wallet";
+import { CopyAddress } from "./CopyAddress";
 
 type Props = {
   api: GearApi;
   refresh: number;
 };
-
-function truncate(addr: string): string {
-  const vara = toVara(addr);
-  return vara.slice(0, 6) + "..." + vara.slice(-4);
-}
 
 export function Leaderboard({ api, refresh }: Props) {
   const [entries, setEntries] = useState<[string, PlayerStats][]>([]);
@@ -74,7 +69,7 @@ export function Leaderboard({ api, refresh }: Props) {
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                 </td>
                 <td className="py-3 px-5 font-mono text-sm text-gray-300">
-                  {truncate(addr)}
+                  <CopyAddress address={addr} />
                 </td>
                 <td className="py-3 px-3 text-center text-sm text-emerald-400">
                   {stats.wins}

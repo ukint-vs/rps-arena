@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GearApi } from "@gear-js/api";
-import { toVara, type WalletAccount } from "../lib/wallet";
+import { type WalletAccount } from "../lib/wallet";
+import { CopyAddress } from "./CopyAddress";
 import type { GameInfo, Move } from "../lib/program";
 import {
   queryComputeCommitment,
@@ -14,12 +15,6 @@ import { u8aToHex } from "@polkadot/util";
 function toHex(addr: string): string {
   if (addr.startsWith("0x")) return addr;
   try { return u8aToHex(decodeAddress(addr)); } catch { return addr; }
-}
-
-function truncate(addr: string): string {
-  if (!addr) return "—";
-  const vara = toVara(addr);
-  return vara.slice(0, 6) + "…" + vara.slice(-4);
 }
 
 const MOVE_EMOJI: Record<string, string> = { Rock: "🪨", Paper: "📄", Scissors: "✂️" };
@@ -217,7 +212,7 @@ export function GameCard({ game, api, account, signer, networkId, onAction, onTx
               ) : (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-400">
-                    Created by <span className="font-mono">{truncate(game.creator)}</span>
+                    Created by <CopyAddress address={game.creator} />
                   </span>
                   <button onClick={() => setExpanded(true)}
                     className="px-5 py-2 bg-emerald-600/10 text-emerald-400 hover:bg-emerald-600/20 border border-emerald-800/50 rounded-lg text-sm font-medium transition-colors">
@@ -228,7 +223,7 @@ export function GameCard({ game, api, account, signer, networkId, onAction, onTx
             </>
           ) : (
             <span className="text-sm text-gray-500">
-              By <span className="font-mono">{truncate(game.creator)}</span> — connect wallet to play
+              By <CopyAddress address={game.creator} /> — connect wallet to play
             </span>
           )}
         </div>
