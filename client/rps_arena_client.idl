@@ -1,0 +1,73 @@
+type Move = enum {
+  Rock,
+  Paper,
+  Scissors,
+};
+
+type GameInfo = struct {
+  id: u64,
+  creator: actor_id,
+  opponent: opt actor_id,
+  status: GameStatus,
+  creator_commitment: h256,
+  opponent_commitment: opt h256,
+  creator_move: opt Move,
+  opponent_move: opt Move,
+  winner: opt actor_id,
+  result: opt GameResult,
+  created_at_block: u32,
+  committed_at_block: opt u32,
+  reveal_deadline_blocks: u32,
+};
+
+type GameStatus = enum {
+  WaitingForOpponent,
+  BothCommitted,
+  Settled,
+  Cancelled,
+};
+
+type GameResult = enum {
+  Win,
+  Lose,
+  Draw,
+};
+
+type PlayerStats = struct {
+  wins: u32,
+  losses: u32,
+  draws: u32,
+  games_played: u32,
+};
+
+constructor {
+  /// Constructor: set reveal timeout in blocks (e.g., 100 blocks ≈ 5 minutes on Vara)
+  New : (reveal_timeout: u32);
+};
+
+service Rps {
+  /// Cancel a game you created that hasn't been joined yet.
+  CancelGame : (game_id: u64) -> null;
+  /// Claim win if opponent didn't reveal in time.
+  ClaimTimeout : (game_id: u64) -> null;
+  /// Create a new game with your committed move hash.
+  /// Commitment = simple_hash(SCALE(move) ++ salt_bytes).
+  /// Use the query ComputeCommitment to generate your commitment.
+  CreateGame : (commitment: h256) -> u64;
+  /// Join an existing game with your committed move hash.
+  JoinGame : (game_id: u64, commitment: h256) -> null;
+  /// Reveal your move and salt. Contract verifies commitment.
+  Reveal : (game_id: u64, mv: Move, salt: str) -> null;
+  /// Helper: compute a commitment hash for a move and salt.
+  /// Use this query to generate your commitment before creating/joining a game.
+  query ComputeCommitment : (mv: Move, salt: str) -> h256;
+  /// Get info about a specific game.
+  query GameState : (game_id: u64) -> opt GameInfo;
+  /// Get the leaderboard sorted by wins.
+  query Leaderboard : () -> vec struct { actor_id, PlayerStats };
+  /// List games for a specific player.
+  query MyGames : (player: actor_id) -> vec GameInfo;
+  /// List games waiting for an opponent.
+  query OpenGames : () -> vec GameInfo;
+};
+
