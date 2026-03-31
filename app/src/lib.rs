@@ -74,11 +74,26 @@ pub struct PlayerStats {
 #[codec(crate = sails_rs::scale_codec)]
 #[scale_info(crate = sails_rs::scale_info)]
 pub enum RpsEvent {
-    GameCreated { game_id: GameId, creator: ActorId },
-    GameJoined { game_id: GameId, opponent: ActorId },
-    MoveRevealed { game_id: GameId, player: ActorId },
-    GameSettled { game_id: GameId, winner: Option<ActorId>, result: GameResult },
-    GameCancelled { game_id: GameId },
+    GameCreated {
+        game_id: GameId,
+        creator: ActorId,
+    },
+    GameJoined {
+        game_id: GameId,
+        opponent: ActorId,
+    },
+    MoveRevealed {
+        game_id: GameId,
+        player: ActorId,
+    },
+    GameSettled {
+        game_id: GameId,
+        winner: Option<ActorId>,
+        result: GameResult,
+    },
+    GameCancelled {
+        game_id: GameId,
+    },
 }
 
 // ── State ───────────────────────────────────────────────────────────────────
@@ -142,7 +157,8 @@ fn simple_hash(data: &[u8]) -> H256 {
         let idx = i % 32;
         result[idx] ^= byte;
         // Mix in position
-        result[(idx + 1) % 32] = result[(idx + 1) % 32].wrapping_add(byte.wrapping_mul((i as u8).wrapping_add(1)));
+        result[(idx + 1) % 32] =
+            result[(idx + 1) % 32].wrapping_add(byte.wrapping_mul((i as u8).wrapping_add(1)));
     }
     H256::from(result)
 }
@@ -241,7 +257,11 @@ impl RpsArenaService<'_> {
         } else if Some(caller) == game.opponent {
             assert!(game.opponent_move.is_none(), "Already revealed");
             assert!(
-                verify_commitment(&mv, salt.as_bytes(), game.opponent_commitment.as_ref().unwrap()),
+                verify_commitment(
+                    &mv,
+                    salt.as_bytes(),
+                    game.opponent_commitment.as_ref().unwrap()
+                ),
                 "Commitment mismatch"
             );
             game.opponent_move = Some(mv);
@@ -342,12 +362,20 @@ impl RpsArenaService<'_> {
         );
 
         // Caller must have revealed, opponent must not have
-        let (winner, loser) = if caller == game.creator && game.creator_move.is_some() && game.opponent_move.is_none() {
+        let (winner, loser) = if caller == game.creator
+            && game.creator_move.is_some()
+            && game.opponent_move.is_none()
+        {
             (game.creator, game.opponent.unwrap())
-        } else if Some(caller) == game.opponent && game.opponent_move.is_some() && game.creator_move.is_none() {
+        } else if Some(caller) == game.opponent
+            && game.opponent_move.is_some()
+            && game.creator_move.is_none()
+        {
             (game.opponent.unwrap(), game.creator)
         } else {
-            panic!("Cannot claim timeout: either you haven't revealed or opponent already revealed");
+            panic!(
+                "Cannot claim timeout: either you haven't revealed or opponent already revealed"
+            );
         };
 
         game.winner = Some(winner);
@@ -375,7 +403,11 @@ impl RpsArenaService<'_> {
     #[export]
     pub fn leaderboard(&self) -> Vec<(ActorId, PlayerStats)> {
         let data = self.data.borrow();
-        let mut entries: Vec<_> = data.leaderboard.iter().map(|(k, v)| (*k, v.clone())).collect();
+        let mut entries: Vec<_> = data
+            .leaderboard
+            .iter()
+            .map(|(k, v)| (*k, v.clone()))
+            .collect();
         entries.sort_by(|a, b| b.1.wins.cmp(&a.1.wins));
         entries
     }

@@ -1,12 +1,9 @@
+use rps_arena_client::{
+    GameInfo, GameResult, GameStatus, Move, PlayerStats, RpsArenaClient, RpsArenaClientCtors,
+    RpsArenaClientProgram, rps::Rps as RpsTrait,
+};
 use sails_rs::client::{Actor, GearEnv, GtestEnv};
 use sails_rs::prelude::*;
-use rps_arena_client::{
-    rps::Rps as RpsTrait,
-    RpsArenaClient,
-    RpsArenaClientCtors,
-    RpsArenaClientProgram,
-    Move, GameStatus, GameResult, GameInfo, PlayerStats,
-};
 
 const PLAYER_1: u64 = 42;
 const PLAYER_2: u64 = 43;
@@ -36,7 +33,10 @@ async fn deploy() -> (GtestEnv, RpsActor, RpsActor) {
 
     let env1 = GtestEnv::new(system, PLAYER_1.into());
 
-    let wasm_path = concat!(env!("CARGO_TARGET_DIR"), "/wasm32-unknown-unknown/wasm32-gear/debug/rps_arena.opt.wasm");
+    let wasm_path = concat!(
+        env!("CARGO_TARGET_DIR"),
+        "/wasm32-unknown-unknown/wasm32-gear/debug/rps_arena.opt.wasm"
+    );
     let code_id = env1.system().submit_code_file(wasm_path);
 
     let deployment = env1.deploy::<RpsArenaClientProgram>(code_id, b"salt1234".to_vec());
@@ -108,7 +108,10 @@ async fn test_creator_wins() {
     let _: () = svc2.join_game(game_id, c2).await.unwrap();
 
     let _: () = svc1.reveal(game_id, Move::Rock, "s1".into()).await.unwrap();
-    let _: () = svc2.reveal(game_id, Move::Scissors, "s2".into()).await.unwrap();
+    let _: () = svc2
+        .reveal(game_id, Move::Scissors, "s2".into())
+        .await
+        .unwrap();
 
     let game: Option<GameInfo> = svc1.game_state(game_id).query().unwrap();
     let game = game.unwrap();
@@ -117,7 +120,10 @@ async fn test_creator_wins() {
     assert_eq!(game.winner, Some(ActorId::from(PLAYER_1)));
 
     let lb: Vec<(ActorId, PlayerStats)> = svc1.leaderboard().query().unwrap();
-    let p1 = lb.iter().find(|(id, _)| *id == ActorId::from(PLAYER_1)).unwrap();
+    let p1 = lb
+        .iter()
+        .find(|(id, _)| *id == ActorId::from(PLAYER_1))
+        .unwrap();
     assert_eq!(p1.1.wins, 1);
     assert_eq!(p1.1.games_played, 1);
 }
@@ -135,8 +141,14 @@ async fn test_opponent_wins() {
     let c2 = compute_commitment(&Move::Scissors, "s2");
     let _: () = svc2.join_game(game_id, c2).await.unwrap();
 
-    let _: () = svc1.reveal(game_id, Move::Paper, "s1".into()).await.unwrap();
-    let _: () = svc2.reveal(game_id, Move::Scissors, "s2".into()).await.unwrap();
+    let _: () = svc1
+        .reveal(game_id, Move::Paper, "s1".into())
+        .await
+        .unwrap();
+    let _: () = svc2
+        .reveal(game_id, Move::Scissors, "s2".into())
+        .await
+        .unwrap();
 
     let game: Option<GameInfo> = svc1.game_state(game_id).query().unwrap();
     let game = game.unwrap();
@@ -157,8 +169,14 @@ async fn test_draw() {
     let c2 = compute_commitment(&Move::Paper, "s2");
     let _: () = svc2.join_game(game_id, c2).await.unwrap();
 
-    let _: () = svc1.reveal(game_id, Move::Paper, "s1".into()).await.unwrap();
-    let _: () = svc2.reveal(game_id, Move::Paper, "s2".into()).await.unwrap();
+    let _: () = svc1
+        .reveal(game_id, Move::Paper, "s1".into())
+        .await
+        .unwrap();
+    let _: () = svc2
+        .reveal(game_id, Move::Paper, "s2".into())
+        .await
+        .unwrap();
 
     let game: Option<GameInfo> = svc1.game_state(game_id).query().unwrap();
     let game = game.unwrap();
