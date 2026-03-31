@@ -31,7 +31,7 @@ export type WalletAccount = {
   source: string;
 };
 
-function toVara(addr: string): string {
+export function toVara(addr: string): string {
   try {
     return encodeAddress(decodeAddress(addr), VARA_SS58);
   } catch {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { GearApi } from "@gear-js/api";
-import type { WalletAccount } from "../lib/wallet";
+import { toVara, type WalletAccount } from "../lib/wallet";
 import type { GameInfo, Move } from "../lib/program";
 import {
   queryComputeCommitment,
@@ -18,7 +18,8 @@ function toHex(addr: string): string {
 
 function truncate(addr: string): string {
   if (!addr) return "—";
-  return addr.slice(0, 8) + "…" + addr.slice(-6);
+  const vara = toVara(addr);
+  return vara.slice(0, 6) + "…" + vara.slice(-4);
 }
 
 const MOVE_EMOJI: Record<string, string> = { Rock: "🪨", Paper: "📄", Scissors: "✂️" };

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { GearApi } from "@gear-js/api";
 import type { PlayerStats } from "../lib/program";
 import { queryLeaderboard } from "../lib/program";
+import { toVara } from "../lib/wallet";
 
 type Props = {
   api: GearApi;
@@ -9,7 +10,8 @@ type Props = {
 };
 
 function truncate(addr: string): string {
-  return addr.slice(0, 8) + "..." + addr.slice(-6);
+  const vara = toVara(addr);
+  return vara.slice(0, 6) + "..." + vara.slice(-4);
 }
 
 export function Leaderboard({ api, refresh }: Props) {
