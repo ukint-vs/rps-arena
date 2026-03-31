@@ -31,6 +31,7 @@ jobs:
         env:
           VITE_PROGRAM_ID: "0x02e1e2f34411eca5da56425b88b82d9825052beb53adda07ba0e23662ab79495"
           VITE_NODE_ENDPOINT: "wss://testnet.vara.network"
+          VITE_UMAMI_ID: "abc266d8-08d7-4846-90f2-cb74569222bf"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
